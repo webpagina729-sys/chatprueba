@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TUWEB — Asistente Virtual</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #0a0a0a;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    /* ── CHAT WRAPPER ── */
+    .chat-wrapper {
+      width: 100%;
+      max-width: 440px;
+      background: #0a0a0a;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid #1e1e1e;
+      display: flex;
+      flex-direction: column;
+      height: 680px;
+      box-shadow: 0 0 80px rgba(192,38,211,0.12);
+    }
+
+    /* ── HEADER ── */
+    .chat-header {
+      background: #111;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid #1e1e1e;
+      flex-shrink: 0;
+    }
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #c026d3, #7c3aed);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+    .header-info { flex: 1; }
+    .header-name { color: #fff; font-weight: 600; font-size: 15px; line-height: 1.2; }
+    .header-status {
+      color: #22c55e;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 2px;
+    }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; }
+    .header-icon { color: #444; cursor: pointer; }
+
+    /* ── MESSAGES BODY ── */
+    .chat-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      scroll-behavior: smooth;
+    }
+    .chat-body::-webkit-scrollbar { width: 4px; }
+    .chat-body::-webkit-scrollbar-track { background: transparent; }
+    .chat-body::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+
+    .date-label {
+      text-align: center;
+      font-size: 11px;
+      color: #444;
+      margin: 4px 0;
+    }
+
+    /* ── MESSAGES ── */
+    .msg {
+      display: flex;
+      flex-direction: column;
+      max-width: 82%;
+      animation: fadeUp 0.3s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .msg.bot  { align-self: flex-start; }
+    .msg.user { align-self: flex-end; }
+
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 20px;
+      font-size: 14px;
+      line-height: 1.55;
+      word-break: break-word;
+    }
+    .bot .bubble {
+      background: #1e1e1e;
+      color: #e5e5e5;
+      border-bottom-left-radius: 4px;
+    }
+    .user .bubble {
+      background: linear-gradient(135deg, #c026d3, #7c3aed);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .msg-time {
+      font-size: 10px;
+      color: #444;
+      margin-top: 4px;
+      padding: 0 4px;
+    }
+    .msg.user .msg-time { text-align: right; }
+
+    /* ── CHIPS ── */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .chip {
+      background: #1a1a1a;
+      border: 1px solid #2e2e2e;
+      color: #c084fc;
+      border-radius: 20px;
+      padding: 6px 13px;
+      font-size: 12px;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chip:hover { background: #2a1a3a; border-color: #c026d3; }
+
+    /* ── TYPING INDICATOR ── */
+    .typing-bubble {
+      background: #1e1e1e;
+      border-radius: 20px;
+      border-bottom-left-radius: 4px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      width: fit-content;
+    }
+    .typing-bubble span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #555;
+      animation: blink 1.2s infinite;
+    }
+    .typing-bubble span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-bubble span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink {
+      0%,60%,100% { transform: translateY(0); background: #555; }
+      30%          { transform: translateY(-6px); background: #c084fc; }
+    }
+
+    /* ── INPUT AREA ── */
+    .chat-input-area {
+      background: #111;
+      padding: 12px 14px;
+      border-top: 1px solid #1e1e1e;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .chat-input {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid #2a2a2a;
+      border-radius: 24px;
+      padding: 10px 16px;
+      color: #e5e5e5;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .chat-input:focus { border-color: #7c3aed; }
+    .chat-input::placeholder { color: #444; }
+
+    .send-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #e879f9, #7c3aed);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 0 18px rgba(192,38,211,0.45);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .send-btn:hover  { transform: scale(1.08); box-shadow: 0 0 26px rgba(192,38,211,0.65); }
+    .send-btn:active { transform: scale(0.95); }
+    .send-btn svg {
+      width: 18px; height: 18px;
+      fill: none; stroke: white;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    /* ── ERROR ── */
+    .error-bubble {
+      background: #2a1111;
+      border: 1px solid #7c2020;
+      color: #f87171;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 480px) {
+      body { padding: 0; align-items: flex-end; }
+      .chat-wrapper { border-radius: 20px 20px 0 0; max-width: 100%; height: 90vh; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="chat-wrapper" role="main" aria-label="Chat de TUWEB">
+
+  <!-- HEADER -->
+  <div class="chat-header">
+    <div class="avatar" aria-hidden="true">TW</div>
+    <div class="header-info">
+      <div class="header-name">TUWEB — Asistente</div>
+      <div class="header-status">
+        <span class="status-dot"></span>
+        <span>En línea ahora</span>
+      </div>
+    </div>
+    <svg class="header-icon" width="22" height="22" viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="1"/>
+      <circle cx="19" cy="12" r="1"/>
+      <circle cx="5"  cy="12" r="1"/>
+    </svg>
+  </div>
+
+  <!-- MESSAGES -->
+  <div class="chat-body" id="chatBody" aria-live="polite" aria-label="Mensajes">
+    <div class="date-label">Hoy</div>
+  </div>
+
+  <!-- INPUT -->
+  <div class="chat-input-area">
+    <input
+      class="chat-input"
+      id="chatInput"
+      type="text"
+      placeholder="Escribí tu mensaje..."
+      autocomplete="off"
+      aria-label="Escribí tu mensaje"
+    />
+    <button class="send-btn" id="sendBtn" aria-label="Enviar mensaje">
+      <svg viewBox="0 0 24 24">
+        <line x1="22" y1="2" x2="11" y2="13"/>
+        <polygon points="22 2 15 22 11 13 2 8 22 2"/>
+      </svg>
+    </button>
+  </div>
+
+</div>
+
+<script>
+  // ─────────────────────────────────────────────────────
+  //  WORKER — toda la lógica de IA y el system prompt
+  //  viven en el Worker de Cloudflare, no acá.
+  // ─────────────────────────────────────────────────────
+  const WORKER_URL = 'https://worker.tuweb.workers.dev/';
+
+  // Historial de la conversación (solo rol + contenido)
+  const history = [];
+
+  // ─────────────────────────────────────────────────────
+  //  WHATSAPP REDIRECT
+  // ─────────────────────────────────────────────────────
+  function handleWhatsAppRedirect(rawReply) {
+    const prefix = 'WHATSAPP_REDIRECT|';
+    if (!rawReply.startsWith(prefix)) return null;
+    const parts   = rawReply.slice(prefix.length).split('|');
+    const phone   = (parts[0] || '').trim().replace(/\D/g, '');
+    const message = (parts[1] || '').trim();
+    return { phone, message };
+  }
+
+  function showWhatsAppCard(phone, message) {
+    const body    = document.getElementById('chatBody');
+    const wrapper = document.createElement('div');
+    wrapper.className  = 'msg bot';
+    wrapper.style.maxWidth = '100%';
+
+    const card = document.createElement('div');
+    card.style.cssText = `
+      background: #0d1f14;
+      border: 1px solid #166534;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    `;
+
+    const waIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="#4ade80">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+      <path d="M11.999 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.523 5.824L.058 23.486a.75.75 0 0 0 .917.899l5.803-1.525A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.626 0 11.999 0zm.001 21.75a9.713 9.713 0 0 1-4.953-1.354l-.355-.211-3.683.967.983-3.592-.232-.369A9.718 9.718 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
+    </svg>`;
+
+    const title = document.createElement('div');
+    title.style.cssText = 'color:#4ade80;font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px;';
+    title.innerHTML = `${waIcon} ¡Listo! Te conectamos con Nicolás`;
+    card.appendChild(title);
+
+    const desc = document.createElement('div');
+    desc.style.cssText = 'color:#86efac;font-size:13px;line-height:1.5;';
+    desc.textContent = 'Ya le preparamos un resumen de tu caso para que la charla sea directa y sin vueltas.';
+    card.appendChild(desc);
+
+    const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    const btn   = document.createElement('a');
+    btn.href   = waUrl;
+    btn.target = '_blank';
+    btn.rel    = 'noopener noreferrer';
+    btn.style.cssText = `
+      display:flex;align-items:center;justify-content:center;gap:8px;
+      background:#16a34a;color:white;border-radius:12px;
+      padding:11px 16px;font-weight:600;font-size:14px;
+      text-decoration:none;transition:background 0.2s;
+    `;
+    btn.innerHTML = `${waIcon.replace('#4ade80','white')} Hablar con Nicolás por WhatsApp`;
+    btn.onmouseover = () => btn.style.background = '#15803d';
+    btn.onmouseout  = () => btn.style.background = '#16a34a';
+    card.appendChild(btn);
+
+    wrapper.appendChild(card);
+
+    const time = document.createElement('div');
+    time.className   = 'msg-time';
+    time.textContent = getTime();
+    wrapper.appendChild(time);
+
+    body.appendChild(wrapper);
+    body.scrollTop = body.scrollHeight;
+  }
+
+  // ─────────────────────────────────────────────────────
+  //  HELPERS
+  // ─────────────────────────────────────────────────────
+  function getTime() {
+    return new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function appendMessage(role, text, chips = []) {
+    const body    = document.getElementById('chatBody');
+    const wrapper = document.createElement('div');
+    wrapper.className = `msg ${role}`;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.innerHTML = text
+      .replace(/\n/g, '<br>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    wrapper.appendChild(bubble);
+
+    const time = document.createElement('div');
+    time.className   = 'msg-time';
+    time.textContent = getTime();
+    wrapper.appendChild(time);
+
+    if (chips.length > 0) {
+      const chipRow = document.createElement('div');
+      chipRow.className = 'chips';
+      chips.forEach(label => {
+        const btn = document.createElement('button');
+        btn.className   = 'chip';
+        btn.textContent = label;
+        btn.onclick = () => { sendMessage(label); chipRow.remove(); };
+        chipRow.appendChild(btn);
+      });
+      wrapper.appendChild(chipRow);
+    }
+
+    body.appendChild(wrapper);
+    body.scrollTop = body.scrollHeight;
+    return wrapper;
+  }
+
+  function showTyping() {
+    const body    = document.getElementById('chatBody');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'msg bot';
+    wrapper.id = 'typing';
+    const tb = document.createElement('div');
+    tb.className = 'typing-bubble';
+    tb.innerHTML = '<span></span><span></span><span></span>';
+    wrapper.appendChild(tb);
+    body.appendChild(wrapper);
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('typing');
+    if (t) t.remove();
+  }
+
+  // ─────────────────────────────────────────────────────
+  //  ENVIAR MENSAJE AL WORKER
+  // ─────────────────────────────────────────────────────
+  async function sendMessage(text) {
+    const input    = document.getElementById('chatInput');
+    const sendBtn  = document.getElementById('sendBtn');
+    const userText = (text || input.value).trim();
+    if (!userText) return;
+
+    input.value      = '';
+    input.disabled   = true;
+    sendBtn.disabled = true;
+
+    appendMessage('user', userText);
+    history.push({ role: 'user', content: userText });
+
+    showTyping();
+
+    try {
+      const res = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: history.slice(-10) }),
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data  = await res.json();
+      const reply = (data.reply || '').trim();
+
+      removeTyping();
+
+      const wa = handleWhatsAppRedirect(reply);
+      if (wa) {
+        // Guardamos un mensaje neutro en el historial para no confundir al modelo
+        history.push({ role: 'assistant', content: '¡Bárbaro! Te mando con Nicolás ahora.' });
+        showWhatsAppCard(wa.phone, wa.message);
+      } else {
+        history.push({ role: 'assistant', content: reply });
+        appendMessage('bot', reply);
+      }
+
+    } catch (err) {
+      removeTyping();
+      const body   = document.getElementById('chatBody');
+      const errDiv = document.createElement('div');
+      errDiv.className   = 'error-bubble';
+      errDiv.textContent = '⚠️ Hubo un error al conectar con el asistente. Intentá de nuevo en un momento.';
+      body.appendChild(errDiv);
+      body.scrollTop = body.scrollHeight;
+      console.error('[TUWEB chat error]', err);
+    } finally {
+      input.disabled   = false;
+      sendBtn.disabled = false;
+      input.focus();
+    }
+  }
+
+  // ─────────────────────────────────────────────────────
+  //  EVENTOS
+  // ─────────────────────────────────────────────────────
+  document.getElementById('sendBtn').addEventListener('click', () => sendMessage());
+  document.getElementById('chatInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+
+  // ─────────────────────────────────────────────────────
+  //  MENSAJE DE BIENVENIDA
+  // ─────────────────────────────────────────────────────
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      appendMessage(
+        'bot',
+        '¡Hola! 👋 Soy el asistente de **TUWEB**.\nEstoy acá para entender tu negocio y mostrarte cómo hacer que trabaje solo mientras vos te enfocás en lo que importa.\n\n¿A qué se dedica tu negocio?',
+        ['🍕 Gastronomía', '🛍️ Ventas / Productos', '📅 Turnos / Servicios', '💼 Otro rubro']
+      );
+    }, 600);
+  });
+</script>
+
+</body>
+</html>
