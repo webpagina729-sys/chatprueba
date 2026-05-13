@@ -284,18 +284,10 @@
 </div>
 
 <script>
-  // ─────────────────────────────────────────────────────
-  //  WORKER — toda la lógica de IA y el system prompt
-  //  viven en el Worker de Cloudflare, no acá.
-  // ─────────────────────────────────────────────────────
-  const WORKER_URL = 'https://workerprueva.tuweb.workers.dev/';
+  const WORKER_URL = 'https://worker.tuweb.workers.dev/';
 
-  // Historial de la conversación (solo rol + contenido)
   const history = [];
 
-  // ─────────────────────────────────────────────────────
-  //  WHATSAPP REDIRECT
-  // ─────────────────────────────────────────────────────
   function handleWhatsAppRedirect(rawReply) {
     const prefix = 'WHATSAPP_REDIRECT|';
     if (!rawReply.startsWith(prefix)) return null;
@@ -364,9 +356,6 @@
     body.scrollTop = body.scrollHeight;
   }
 
-  // ─────────────────────────────────────────────────────
-  //  HELPERS
-  // ─────────────────────────────────────────────────────
   function getTime() {
     return new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
   }
@@ -424,9 +413,6 @@
     if (t) t.remove();
   }
 
-  // ─────────────────────────────────────────────────────
-  //  ENVIAR MENSAJE AL WORKER
-  // ─────────────────────────────────────────────────────
   async function sendMessage(text) {
     const input    = document.getElementById('chatInput');
     const sendBtn  = document.getElementById('sendBtn');
@@ -458,7 +444,6 @@
 
       const wa = handleWhatsAppRedirect(reply);
       if (wa) {
-        // Guardamos un mensaje neutro en el historial para no confundir al modelo
         history.push({ role: 'assistant', content: '¡Bárbaro! Te mando con Nicolás ahora.' });
         showWhatsAppCard(wa.phone, wa.message);
       } else {
@@ -482,17 +467,11 @@
     }
   }
 
-  // ─────────────────────────────────────────────────────
-  //  EVENTOS
-  // ─────────────────────────────────────────────────────
   document.getElementById('sendBtn').addEventListener('click', () => sendMessage());
   document.getElementById('chatInput').addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
 
-  // ─────────────────────────────────────────────────────
-  //  MENSAJE DE BIENVENIDA
-  // ─────────────────────────────────────────────────────
   window.addEventListener('load', () => {
     setTimeout(() => {
       appendMessage(
